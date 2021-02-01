@@ -18,6 +18,7 @@ import UIKit
 import SquareInAppPaymentsSDK
 import HealthKit
 import HealthKitUI
+import Capacitor
 
 enum Result<T> {
     case success
@@ -27,6 +28,18 @@ enum Result<T> {
 
 class ExampleViewController: UIViewController {
     fileprivate var applePayResult: Result<String> = Result.canceled
+    var _call: CAPPluginCall?
+    var amount: Int
+
+    init(call: CAPPluginCall, amount: Int) {
+        self._call = call
+        self.amount = amount
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) is not supported")
+    }
 
     override func loadView() {
         let cookieView = ExampleView()
@@ -36,22 +49,22 @@ class ExampleViewController: UIViewController {
 
         showOrderSheet()
     }
-    
+
     @objc private func didTapBuyButton() {
         showOrderSheet()
     }
-    
+
     private func showOrderSheet() {
         // Open the buy modal
-        let orderViewController = OrderViewController()
+        let orderViewController = OrderViewController(amount: self.amount)
         orderViewController.delegate = self
         let nc = OrderNavigationController(rootViewController: orderViewController)
         nc.modalPresentationStyle = .custom
         nc.transitioningDelegate = self
         present(nc, animated: true, completion: nil)
     }
-    
-    
+
+
     private func printCurlCommand(nonce : String) {
         let uuid = UUID().uuidString
         print("curl --request POST https://connect.squareup.com/v2/payments \\" +
@@ -67,11 +80,11 @@ class ExampleViewController: UIViewController {
             "\"source_id\": \"\(nonce)\"" +
             "}\'");
     }
-    
+
     private var serverHostSet: Bool {
         return Constants.Square.CHARGE_SERVER_HOST != "REPLACE_ME"
     }
-    
+
     private var appleMerchanIdSet: Bool {
         return Constants.ApplePay.MERCHANT_IDENTIFIER != "REPLACE_ME"
     }
@@ -123,7 +136,7 @@ extension ExampleViewController: OrderViewControllerDelegate {
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
     }
-    
+
     private func didChargeSuccessfully() {
         // Let user know that the charge was successful
         let alert = UIAlertController(title: "Your order was successful",
@@ -132,15 +145,15 @@ extension ExampleViewController: OrderViewControllerDelegate {
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
     }
-    
+
     private func showCurlInformation() {
-        let alert = UIAlertController(title: "Nonce generated but not charged",
-                                      message: "Check your console for a CURL command to charge the nonce, or replace Constants.Square.CHARGE_SERVER_HOST with your server host.",
-                                      preferredStyle: UIAlertController.Style.alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(alert, animated: true, completion: nil)
+//        let alert = UIAlertController(title: "Nonce generated but not charged",
+//                                      message: "Check your console for a CURL command to charge the nonce, or replace Constants.Square.CHARGE_SERVER_HOST with your server host.",
+//                                      preferredStyle: UIAlertController.Style.alert)
+//        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+//        present(alert, animated: true, completion: nil)
     }
-    
+
     private func showMerchantIdNotSet() {
         let alert = UIAlertController(title: "Missing Apple Pay Merchant ID",
                                       message: "To request an Apple Pay nonce, replace Constants.ApplePay.MERCHANT_IDENTIFIER with a Merchant ID.",
@@ -173,6 +186,9 @@ extension ExampleViewController: SQIPCardEntryViewControllerDelegate {
     func cardEntryViewController(_ cardEntryViewController: SQIPCardEntryViewController, didObtain cardDetails: SQIPCardDetails, completionHandler: @escaping (Error?) -> Void) {
         guard serverHostSet else {
             printCurlCommand(nonce: cardDetails.nonce)
+            self._call?.resolve([
+                "nonce": cardDetails.nonce
+            ])
             completionHandler(nil)
             return
         }
@@ -233,19 +249,19 @@ extension ExampleViewController: PKPaymentAuthorizationViewControllerDelegate {
                 completion(PKPaymentAuthorizationResult(status: .failure, errors: errors))
                 return
             }
-            
+
             guard let strongSelf = self else {
                 completion(PKPaymentAuthorizationResult(status: .failure, errors: []))
                 return
             }
-            
+
             guard strongSelf.serverHostSet else {
                 strongSelf.printCurlCommand(nonce: cardDetails.nonce)
                 strongSelf.applePayResult = .success
                 completion(PKPaymentAuthorizationResult(status: .failure, errors: []))
                 return
             }
-            
+
             ChargeApi.processPayment(cardDetails.nonce) { (transactionId, error) in
                 if let error = error, !error.isEmpty {
                     strongSelf.applePayResult = Result.failure(error)

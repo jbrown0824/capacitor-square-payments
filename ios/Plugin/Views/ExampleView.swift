@@ -51,11 +51,11 @@ class ExampleView : UIView {
             containerStackView.centerYAnchor.constraint(equalTo: self.centerYAnchor),
         ])
 
-        containerStackView.addArrangedSubview(makeCookieImage())
+//        containerStackView.addArrangedSubview(makeCookieImage())
         containerStackView.addArrangedSubview(descriptionStackView)
 
-        descriptionStackView.addArrangedSubview(makeTitleLabel())
-        descriptionStackView.addArrangedSubview(makeDescriptionLabel())
+//        descriptionStackView.addArrangedSubview(makeTitleLabel())
+//        descriptionStackView.addArrangedSubview(makeDescriptionLabel())
         descriptionStackView.addArrangedSubview(buyButton)
     }
 }

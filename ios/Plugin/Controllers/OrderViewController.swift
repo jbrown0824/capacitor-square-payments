@@ -25,9 +25,19 @@ protocol OrderViewControllerDelegate: class {
 class OrderViewController : UIViewController {
     weak var delegate: OrderViewControllerDelegate?
     var applePayResponse : String?
-    
+    var amount: Int
+
+	init(amount: Int) {
+		self.amount = amount
+		super.init(nibName: nil, bundle: nil)
+	}
+
+	required init?(coder: NSCoder) {
+		fatalError("init(coder:) is not supported")
+	}
+
     override func loadView() {
-        let orderView = OrderView()
+        let orderView = OrderView(amount: self.amount)
         self.view = orderView
 
         orderView.addCardButton.addTarget(self, action: #selector(didTapPayButton), for: .touchUpInside)
@@ -36,15 +46,15 @@ class OrderViewController : UIViewController {
     }
 
     // MARK: - Button tap functions
-    
+
     @objc private func didTapCloseButton() {
         dismiss(animated: true, completion: nil)
     }
-    
+
     @objc private func didTapPayButton() {
         delegate?.didRequestPayWithCard()
     }
-    
+
     @objc private func didTapApplePayButton() {
         delegate?.didRequestPayWithApplyPay()
     }

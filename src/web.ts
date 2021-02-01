@@ -9,9 +9,12 @@ export class SquarePaymentWeb extends WebPlugin implements SquarePaymentPlugin {
     });
   }
 
-  async echo(options: { value: string }): Promise<{ value: string }> {
-    console.log('ECHO', options);
-    return options;
+  async initApp(_options: { applicationId: string; }): Promise<void> {
+    throw new Error("Method not implemented.");
+  }
+
+  async requestNonce(_options: { amount: number }): Promise<{ nonce: string }> {
+    throw new Error("Method not implemented");
   }
 }
 

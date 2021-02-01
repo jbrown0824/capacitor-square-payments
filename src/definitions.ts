@@ -5,5 +5,6 @@ declare module '@capacitor/core' {
 }
 
 export interface SquarePaymentPlugin {
-  echo(options: { value: string }): Promise<{ value: string }>;
+  initApp(options: { applicationId: string }): Promise<void>;
+  requestNonce(_options: { amount: number }): Promise<{ nonce: string }>;
 }

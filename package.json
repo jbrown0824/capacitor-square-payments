@@ -1,6 +1,6 @@
 {
   "name": "capacitor-square-payments",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Make Square payments through Capacitor",
   "main": "dist/plugin.js",
   "module": "dist/esm/index.js",

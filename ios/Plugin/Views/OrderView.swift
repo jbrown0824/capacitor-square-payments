@@ -34,26 +34,32 @@ class OrderView : UIView {
     var closeButton: UIButton {
         return headerView.closeButton
     }
-    
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        commonInit()
+
+    required init(amount: Int) {
+        super.init(frame: CGRect.zero)
+        commonInit(amount: amount)
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        commonInit()
+        commonInit(amount: 0)
     }
-    
-    private func commonInit() {
+
+    private func commonInit(amount: Int) {
         backgroundColor = Color.popupBackground
 
+        let decimalAmount = Double(amount) / 100
+        let currencyFormatter = NumberFormatter()
+        currencyFormatter.usesGroupingSeparator = true
+        currencyFormatter.numberStyle = .currency
+        currencyFormatter.locale = Locale.current
+
         stackView.addArrangedSubview(headerView)
-        stackView.addArrangedSubview(TableRowView(heading: "Ship to", title: "Lauren Nobel", subtitle: "1455 Market Street\nSan Francisco, CA, 94103"))
+//        stackView.addArrangedSubview(TableRowView(heading: "Ship to", title: "Lauren Nobel", subtitle: "1455 Market Street\nSan Francisco, CA, 94103"))
+//        stackView.addArrangedSubview(HairlineView())
+        stackView.addArrangedSubview(TableRowView(heading: "Total", title: currencyFormatter.string(from: NSNumber(value: decimalAmount))!, subtitle: nil))
         stackView.addArrangedSubview(HairlineView())
-        stackView.addArrangedSubview(TableRowView(heading: "Total", title: "$1.00", subtitle: nil))
-        stackView.addArrangedSubview(HairlineView())
-        stackView.addArrangedSubview(makeRefundLabel())
+//        stackView.addArrangedSubview(makeRefundLabel())
 
         let payStackView = UIStackView()
         payStackView.spacing = 12
