@@ -16,8 +16,6 @@
 
 import UIKit
 import SquareInAppPaymentsSDK
-import HealthKit
-import HealthKitUI
 import Capacitor
 
 enum Result<T> {
@@ -30,10 +28,17 @@ class ExampleViewController: UIViewController {
     fileprivate var applePayResult: Result<String> = Result.canceled
     var _call: CAPPluginCall?
     var amount: Int
+    var APPLE_MERCHANT_ID: String?
+    var APPLE_COUNTRY_CODE: String = "US"
+    var APPLE_CURRENCY_CODE: String = "USD"
 
-    init(call: CAPPluginCall, amount: Int) {
+    init(call: CAPPluginCall, amount: Int, appleMerchantId: String? = nil, appleCountryCode: String = "US", appleCurrencyCode: String = "USD") {
         self._call = call
         self.amount = amount
+        self.APPLE_MERCHANT_ID = appleMerchantId
+        self.APPLE_COUNTRY_CODE = appleCountryCode
+        self.APPLE_CURRENCY_CODE = appleCurrencyCode
+        
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -75,18 +80,14 @@ class ExampleViewController: UIViewController {
             "\"idempotency_key\": \"\(uuid)\"," +
             "\"autocomplete\": true," +
             "\"amount_money\": {" +
-            "\"amount\": 100," +
+            "\"amount\": \(self.amount)," +
             "\"currency\": \"USD\"}," +
             "\"source_id\": \"\(nonce)\"" +
             "}\'");
     }
 
-    private var serverHostSet: Bool {
-        return Constants.Square.CHARGE_SERVER_HOST != "REPLACE_ME"
-    }
-
     private var appleMerchanIdSet: Bool {
-        return Constants.ApplePay.MERCHANT_IDENTIFIER != "REPLACE_ME"
+        self.APPLE_MERCHANT_ID != nil;
     }
 }
 
@@ -156,7 +157,7 @@ extension ExampleViewController: OrderViewControllerDelegate {
 
     private func showMerchantIdNotSet() {
         let alert = UIAlertController(title: "Missing Apple Pay Merchant ID",
-                                      message: "To request an Apple Pay nonce, replace Constants.ApplePay.MERCHANT_IDENTIFIER with a Merchant ID.",
+                                      message: "To request an Apple Pay nonce, provide an Apple Merchant ID.",
                                       preferredStyle: UIAlertController.Style.alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
@@ -167,43 +168,24 @@ extension ExampleViewController: SQIPCardEntryViewControllerDelegate {
     func cardEntryViewController(_ cardEntryViewController: SQIPCardEntryViewController, didCompleteWith status: SQIPCardEntryCompletionStatus) {
         // Note: If you pushed the card entry form onto an existing navigation controller,
         // use UINavigationController.popViewController(animated:) instead
+//        [self dismissViewControllerAnimated:YES completion:nil]
         dismiss(animated: true) {
             switch status {
             case .canceled:
                 self.showOrderSheet()
                 break
             case .success:
-                guard self.serverHostSet else {
-                    self.showCurlInformation()
-                    return
-                }
-
-                self.didChargeSuccessfully()
+                self.showCurlInformation()
             }
         }
     }
 
     func cardEntryViewController(_ cardEntryViewController: SQIPCardEntryViewController, didObtain cardDetails: SQIPCardDetails, completionHandler: @escaping (Error?) -> Void) {
-        guard serverHostSet else {
-            printCurlCommand(nonce: cardDetails.nonce)
-            self._call?.resolve([
-                "nonce": cardDetails.nonce
-            ])
-            completionHandler(nil)
-            return
-        }
-
-        ChargeApi.processPayment(cardDetails.nonce) { (transactionID, errorDescription) in
-            guard let errorDescription = errorDescription else {
-                // No error occured, we successfully charged
-                completionHandler(nil)
-                return
-            }
-
-            // Pass error description
-            let error = NSError(domain: "com.example.supercookie", code: 0, userInfo:[NSLocalizedDescriptionKey : errorDescription])
-            completionHandler(error)
-        }
+        printCurlCommand(nonce: cardDetails.nonce)
+        self._call?.resolve([
+            "nonce": cardDetails.nonce
+        ])
+        completionHandler(nil)
     }
 }
 
@@ -219,13 +201,13 @@ extension ExampleViewController: PKPaymentAuthorizationViewControllerDelegate {
         }
 
         let paymentRequest = PKPaymentRequest.squarePaymentRequest(
-            merchantIdentifier: Constants.ApplePay.MERCHANT_IDENTIFIER,
-            countryCode: Constants.ApplePay.COUNTRY_CODE,
-            currencyCode: Constants.ApplePay.CURRENCY_CODE
+            merchantIdentifier: self.APPLE_MERCHANT_ID!,
+            countryCode: self.APPLE_COUNTRY_CODE,
+            currencyCode: self.APPLE_CURRENCY_CODE
         )
 
         paymentRequest.paymentSummaryItems = [
-            PKPaymentSummaryItem(label: "Super Cookie", amount: 1.00)
+            PKPaymentSummaryItem(label: "Fine Grounds", amount: NSDecimalNumber(decimal: Decimal(self.amount / 100)))
         ]
 
         let paymentAuthorizationViewController = PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
@@ -255,22 +237,9 @@ extension ExampleViewController: PKPaymentAuthorizationViewControllerDelegate {
                 return
             }
 
-            guard strongSelf.serverHostSet else {
-                strongSelf.printCurlCommand(nonce: cardDetails.nonce)
-                strongSelf.applePayResult = .success
-                completion(PKPaymentAuthorizationResult(status: .failure, errors: []))
-                return
-            }
-
-            ChargeApi.processPayment(cardDetails.nonce) { (transactionId, error) in
-                if let error = error, !error.isEmpty {
-                    strongSelf.applePayResult = Result.failure(error)
-                } else {
-                    strongSelf.applePayResult = Result.success
-                }
-
-                completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
-            }
+            strongSelf.printCurlCommand(nonce: cardDetails.nonce)
+            strongSelf.applePayResult = .success
+            completion(PKPaymentAuthorizationResult(status: .failure, errors: []))
         }
     }
 
@@ -278,11 +247,8 @@ extension ExampleViewController: PKPaymentAuthorizationViewControllerDelegate {
         controller.dismiss(animated: true) {
             switch self.applePayResult {
             case .success:
-                guard self.serverHostSet else {
-                    self.showCurlInformation()
-                    return
-                }
-                self.didChargeSuccessfully()
+                self.showCurlInformation()
+                return
             case .failure(let description):
                 self.didNotChargeApplePay(description)
                 break
