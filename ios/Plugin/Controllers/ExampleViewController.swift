@@ -17,6 +17,7 @@
 import UIKit
 import SquareInAppPaymentsSDK
 import Capacitor
+import PassKit
 
 enum Result<T> {
     case success
@@ -26,14 +27,14 @@ enum Result<T> {
 
 class ExampleViewController: UIViewController {
     fileprivate var applePayResult: Result<String> = Result.canceled
-    var _call: CAPPluginCall?
+    var completed: (String) -> Void
     var amount: Int
     var APPLE_MERCHANT_ID: String?
     var APPLE_COUNTRY_CODE: String = "US"
     var APPLE_CURRENCY_CODE: String = "USD"
 
-    init(call: CAPPluginCall, amount: Int, appleMerchantId: String? = nil, appleCountryCode: String = "US", appleCurrencyCode: String = "USD") {
-        self._call = call
+    init(completed: @escaping (String) -> Void, amount: Int, appleMerchantId: String? = nil, appleCountryCode: String = "US", appleCurrencyCode: String = "USD") {
+        self.completed = completed
         self.amount = amount
         self.APPLE_MERCHANT_ID = appleMerchantId
         self.APPLE_COUNTRY_CODE = appleCountryCode
@@ -138,15 +139,6 @@ extension ExampleViewController: OrderViewControllerDelegate {
         present(alert, animated: true, completion: nil)
     }
 
-    private func didChargeSuccessfully() {
-        // Let user know that the charge was successful
-        let alert = UIAlertController(title: "Your order was successful",
-                                      message: "Go to your Square dashbord to see this order reflected in the sales tab.",
-                                      preferredStyle: UIAlertController.Style.alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-        present(alert, animated: true, completion: nil)
-    }
-
     private func showCurlInformation() {
 //        let alert = UIAlertController(title: "Nonce generated but not charged",
 //                                      message: "Check your console for a CURL command to charge the nonce, or replace Constants.Square.CHARGE_SERVER_HOST with your server host.",
@@ -182,9 +174,7 @@ extension ExampleViewController: SQIPCardEntryViewControllerDelegate {
 
     func cardEntryViewController(_ cardEntryViewController: SQIPCardEntryViewController, didObtain cardDetails: SQIPCardDetails, completionHandler: @escaping (Error?) -> Void) {
         printCurlCommand(nonce: cardDetails.nonce)
-        self._call?.resolve([
-            "nonce": cardDetails.nonce
-        ])
+        self.completed(cardDetails.nonce)
         completionHandler(nil)
     }
 }
@@ -207,7 +197,7 @@ extension ExampleViewController: PKPaymentAuthorizationViewControllerDelegate {
         )
 
         paymentRequest.paymentSummaryItems = [
-            PKPaymentSummaryItem(label: "Fine Grounds", amount: NSDecimalNumber(decimal: Decimal(self.amount / 100)))
+            PKPaymentSummaryItem(label: "Fine Grounds", amount: NSDecimalNumber(decimal: Decimal(self.amount) / 100))
         ]
 
         let paymentAuthorizationViewController = PKPaymentAuthorizationViewController(paymentRequest: paymentRequest)
@@ -239,7 +229,8 @@ extension ExampleViewController: PKPaymentAuthorizationViewControllerDelegate {
 
             strongSelf.printCurlCommand(nonce: cardDetails.nonce)
             strongSelf.applePayResult = .success
-            completion(PKPaymentAuthorizationResult(status: .failure, errors: []))
+            strongSelf.completed(cardDetails.nonce)
+            completion(PKPaymentAuthorizationResult(status: .success, errors: nil))
         }
     }
 
