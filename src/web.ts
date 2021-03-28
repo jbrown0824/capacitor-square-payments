@@ -11,6 +11,7 @@ export class SquarePaymentWeb extends WebPlugin implements SquarePaymentPlugin {
 
   async initApp(_options: { applicationId: string; }): Promise<void> {
     throw new Error("Method not implemented.");
+    document.getElementById()
   }
 
   async requestNonce(_options: { amount: number }): Promise<{ nonce: string }> {

@@ -1,5 +1,28 @@
 
   <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="io.nightfox.plugins.capacitor-square-payments.capacitorsquarepayments">
+      package="io.nightfox.plugins.capacitorsquarepayments">
+
+    <application
+        android:name=".CapacitorSquarePayment"
+        android:allowBackup="true">
+
+      <meta-data
+          android:name="com.google.android.gms.wallet.api.enabled"
+          android:value="true"/>
+
+      <meta-data
+          android:name="sqip.SQUARE_APPLICATION_ID"
+          android:value="REPLACE_ME"/>
+
+      <activity
+          android:name=".CheckoutActivity"
+          android:theme="@style/AppTheme.CookieActivity">
+        <intent-filter>
+          <action android:name="android.intent.action.MAIN"/>
+
+          <category android:name="android.intent.category.LAUNCHER"/>
+        </intent-filter>
+      </activity>
+
+    </application>
   </manifest>
-  
