@@ -19,14 +19,6 @@ public class CapacitorSquarePayment extends Application {
   public void onCreate() {
     super.onCreate();
 
-//    Retrofit retrofit = ConfigHelper.createRetrofitInstance();
-//    chargeCallFactory = new ChargeCall.Factory(retrofit);
-
-    // Original Version
-//    CardEntryBackgroundHandler cardHandler =
-//        new CardEntryBackgroundHandler(chargeCallFactory, getResources());
-//    CardEntry.setCardNonceBackgroundHandler(cardHandler);
-
     // Readme Version
     CardEntryBackgroundHandler cardHandler = new CardEntryBackgroundHandler();
     CardEntry.setCardNonceBackgroundHandler(cardHandler);

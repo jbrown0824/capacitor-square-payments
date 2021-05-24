@@ -16,6 +16,18 @@ export class SquarePaymentWeb extends WebPlugin implements SquarePaymentPlugin {
   async requestNonce(_options: { amount: number }): Promise<{ nonce: string }> {
     throw new Error("Method not implemented");
   }
+
+  async requestApplePayNonce(_options: { amount: number }): Promise<{ nonce: string }> {
+    throw new Error("Method not implemented");
+  }
+
+  async requestGooglePayNonce(_options: { amount: number, locationId: string }): Promise<{ nonce: string }> {
+    throw new Error("Method not implemented");
+  }
+
+  async requestManualEntryNonce(_options: { amount: number }): Promise<{ nonce: string }> {
+    throw new Error("Method not implemented");
+  }
 }
 
 const SquarePayment = new SquarePaymentWeb();

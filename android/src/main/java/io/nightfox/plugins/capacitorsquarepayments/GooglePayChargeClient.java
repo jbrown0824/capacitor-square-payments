@@ -1,7 +1,6 @@
 package io.nightfox.plugins.capacitorsquarepayments;
 
 import androidx.annotation.Nullable;
-
 import sqip.Call;
 import sqip.GooglePay;
 import sqip.GooglePayNonceResult;
@@ -9,7 +8,7 @@ import sqip.GooglePayNonceResult;
 public class GooglePayChargeClient {
   private final ChargeCall.Factory chargeCallFactory;
 
-  @Nullable private io.nightfox.plugins.capacitorsquarepayments.CheckoutActivity activity;
+  @Nullable private io.nightfox.plugins.capacitorsquarepayments.GooglePayCheckoutActivity activity;
   @Nullable private Call<GooglePayNonceResult> requestNonceCall;
   @Nullable private Call<io.nightfox.plugins.capacitorsquarepayments.ChargeResult> chargeCall;
 
@@ -17,7 +16,7 @@ public class GooglePayChargeClient {
     this.chargeCallFactory = chargeCallFactory;
   }
 
-  public void charge(String googlePayToken) {
+  public void createNonce(String googlePayToken) {
     if (nonceRequestInFlight() || chargeRequestInFlight()) {
       return;
     }
@@ -35,12 +34,12 @@ public class GooglePayChargeClient {
     }
     if (result.isSuccess()) {
       String nonce = result.getSuccessValue().getNonce();
-      chargeNonce(nonce);
+//      chargeNonce(nonce);
     } else if (result.isError()) {
       GooglePayNonceResult.Error error = result.getErrorValue();
       switch (error.getCode()) {
         case NO_NETWORK:
-          activity.showNetworkErrorRetryPayment(() -> charge(googlePayToken));
+          activity.showNetworkErrorRetryPayment(() -> createNonce(googlePayToken));
           break;
         case UNSUPPORTED_SDK_VERSION:
         case USAGE_ERROR:
@@ -60,7 +59,7 @@ public class GooglePayChargeClient {
     }
   }
 
-  public void onActivityCreated(io.nightfox.plugins.capacitorsquarepayments.CheckoutActivity activity) {
+  public void onActivityCreated(io.nightfox.plugins.capacitorsquarepayments.GooglePayCheckoutActivity activity) {
     this.activity = activity;
   }
 
@@ -76,33 +75,4 @@ public class GooglePayChargeClient {
     return requestNonceCall != null;
   }
 
-  private void chargeNonce(String nonce) {
-    if (!ConfigHelper.serverHostSet()) {
-      if (activity == null) {
-        return;
-      }
-      ConfigHelper.printCurlCommand(nonce);
-      activity.showServerHostNotSet();
-      return;
-    }
-    chargeCall = chargeCallFactory.create(nonce);
-    chargeCall.enqueue(chargeResult -> onChargeResult(nonce, chargeResult));
-  }
-
-  private void onChargeResult(String nonce, io.nightfox.plugins.capacitorsquarepayments.ChargeResult chargeResult) {
-    if (!chargeRequestInFlight()) {
-      return;
-    }
-    chargeCall = null;
-    if (activity == null) {
-      return;
-    }
-    if (chargeResult.success) {
-      activity.showSuccessCharge();
-    } else if (chargeResult.networkError) {
-      activity.showNetworkErrorRetryPayment(() -> chargeNonce(nonce));
-    } else {
-      activity.showError(chargeResult.errorMessage);
-    }
-  }
 }

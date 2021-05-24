@@ -10,7 +10,7 @@
     <string name="missing_application_id_title">Missing Square Application ID</string>
     <string name="network_failure_title">Network Error</string>
     <string name="network_failure">There was an error processing the payment, please check your network connection.</string>
-    <string name="pay_button">Pay 🍪</string>
+    <string name="pay_button">Pay</string>
     <string name="pay_with_card">Pay with card</string>
     <string name="place_your_order">Place your order</string>
     <string name="price">$1.00</string>

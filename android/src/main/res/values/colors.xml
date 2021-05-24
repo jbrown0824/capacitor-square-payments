@@ -39,6 +39,4 @@
 
     <!-- Card Entry -->
     <color name="colorCardEntryBackground">@color/white</color>
-
-    <color name="ic_launcher_background">@color/amethyst</color>
 </resources>
